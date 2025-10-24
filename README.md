@@ -38,4 +38,13 @@
 <p>SQL (MySQL), eraser for ER diagrams, Git/GitHub for version control.</p>
 
 ## 2. Team Roles and Responsibilities 👥
+<span>This project assumes a collaborative team structure for a database design project of this scale.</span>
+Below are the roles and their responsibilities:
 
+| Role      | Key Responsibilities          |
+|-----------|-----------------------------------------|
+| **Database Designer** 🗄️ | Crafts the ER diagram, normalizes the schema to 3NF, and writes SQL DDL scripts. |
+| **Backend Developer** 💻 | Develops SQL DML scripts for seeding data and tests schema functionality. |
+| **QA Engineer** ✅ | Validates schema integrity, constraints, and sample data for 3NF compliance. |
+| **DevOps Engineer** 🚀 | Manages GitHub repository, sets up CI/CD pipelines, and ensures deployment readiness. |
+| **Technical Writer** ✍️ | Documents normalization, schema design, and setup instructions clearly. |
