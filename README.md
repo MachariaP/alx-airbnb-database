@@ -8,7 +8,7 @@
 </div>
 
 
-# 📜 <style="color:blue">Table of Contents</>
+# 📜 <span style="color:blue">Table of Contents</span>
 - [1. Project Overview](#1-project-overview)
 - [2. Team Roles and Responsibilities](#2-team-roles-and-responsibilities)
 - [3. Technology Stack Overview](#3-technology-stack-overview)
