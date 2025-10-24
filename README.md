@@ -1,6 +1,6 @@
 <div align="center">
-    <h1>🏡 <font color="blue">DataScape</font></h1>
-    <p><font color="blue">Mastering Database Design</font></p>
+    <h1 style="color:blue">🏡 DataScape</h1>
+    <p style="color:blue">Mastering Database Design</p>
 
 ![GitHub repo size](https://img.shields.io/github/repo-size/MachariaP/alx-airbnb-database) 
     ![GitHub last commit](https://img.shields.io/github/last-commit/MachariaP/alx-airbnb-database) 
@@ -8,8 +8,8 @@
 </div>
 
 
-# 📜 <font color="blue">Table of Contents</font>
-- [<font color="blue">1. Project Overview</font>](#1-project-overview)
+# 📜 <style="color:blue">Table of Contents</>
+- [1. Project Overview](#1-project-overview)
 - [2. Team Roles and Responsibilities](#2-team-roles-and-responsibilities)
 - [3. Technology Stack Overview](#3-technology-stack-overview)
 - [4. Database Design Overview](#4-database-design-overview)
