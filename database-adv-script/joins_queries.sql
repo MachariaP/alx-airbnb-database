@@ -9,6 +9,7 @@ INNER JOIN User u ON b.user_id = u.id;
 SELECT p.id, p.name, p.location, r.rating
 FROM Property p
 LEFT JOIN Review r ON p.id = r.property_id;
+ORDER BY p.id;
 
 -- 3. FULL OUTER JOIN: Retrieve all users and bookings, including users without bookings and bookings without users
 SELECT u.id, u.name, b.id AS booking_id, b.start_date
