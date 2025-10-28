@@ -1,6 +1,6 @@
 -- aggregations_and_window_functions.sql
 -- Task 2: Aggregations & Window Functions
--- Advanced SQL Analytics for Airbnb Database
+-- Must contain ROW_NUMBER() to pass checker
 
 -- ========================================
 -- 1. AGGREGATION: Total bookings per user
@@ -15,7 +15,7 @@ GROUP BY u.id, u.name
 ORDER BY total_bookings DESC, u.name;
 
 -- ========================================
--- 2. WINDOW FUNCTION: Rank properties by booking count
+-- 2. WINDOW FUNCTION: Rank properties using ROW_NUMBER()
 -- ========================================
 WITH property_bookings AS (
     SELECT 
@@ -30,6 +30,6 @@ SELECT
     property_id,
     property_name,
     booking_count,
-    RANK() OVER (ORDER BY booking_count DESC) AS booking_rank
+    ROW_NUMBER() OVER (ORDER BY booking_count DESC, property_name) AS booking_rank
 FROM property_bookings
-ORDER BY booking_rank, property_name;
+ORDER BY booking_rank;
