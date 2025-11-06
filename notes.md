@@ -145,25 +145,174 @@ CREATE TABLE Registration (
 
 These questions require you to apply the principles of ER modeling, Normalization, and Schema Design simultaneously.
 
-### Challenge 1: Simple Library Checkout System
+---
 
-Design the ER diagram and schema (up to 3NF) for a system where a single **Member** can borrow multiple **Books**. Focus on defining the relationship between the Member, the Book, and the specific **Checkout Transaction** (when the book leaves the library). Identify the necessary Primary and Foreign keys.
+### 1. Simple Library Checkout System (ER, Schema, Keys)
 
-### Challenge 2: Product Catalog System
+**Conceptual Model (ER Diagram):**
+*   **Entities:** `Member`, `Book`, and `CheckoutTransaction` (an associative entity).
+*   **Relationships:** The core relationship is Many-to-Many (M:N) between `Member` and `Book` (a member can borrow many books, a book can be borrowed by many members over time).
+*   **Resolution:** This M:N must be resolved using the `CheckoutTransaction` junction table, resulting in two One-to-Many (1:M) relationships.
 
-You are building a product catalog where **Products** belong to a **Category**, and each Product has a fixed **Price**. Explain how a failure to achieve **3NF** might manifest if you stored the Category Name alongside the Product, and show the DDL required to enforce 3NF.
+**Schema Design (3NF DDL):**
 
-### Challenge 3: Restaurant Order System
+| Table | Primary Key (PK) | Foreign Keys (FK) | Important Attributes |
+| :--- | :--- | :--- | :--- |
+| **`Member`** | `MemberID` | None | `Name`, `Address` |
+| **`Book`** | `BookID` | None | `Title`, `Author`, `ISBN` |
+| **`CheckoutTransaction`** | `TransactionID` (Surrogate Key) **OR** `(MemberID, BookID, CheckoutDate)` (Composite Key) | `MemberID` (FK to `Member`), `BookID` (FK to `Book`) | `CheckoutDate`, `DueDate`, `ReturnDate` |
 
-Model a **Many-to-Many** relationship between **Orders** and **MenuItems**. How would you resolve this M:N relationship using a junction table, and what non-key attribute (e.g., quantity, special instructions) must the junction table possess to be useful?
+**SQL DDL Example:**
 
-### Challenge 4: Composite Key Design
+```sql
+-- 1. Member Table (PK definition)
+CREATE TABLE Member (
+    MemberID INT PRIMARY KEY,
+    Name     VARCHAR(150) NOT NULL,
+    Address  VARCHAR(255)
+);
 
-Design a schema for tracking the outcomes of **Soccer Games**. Identify two tables where a **Composite Primary Key** is strictly necessary to prevent duplicate data (e.g., tracking a specific score for a specific team in a specific match). Explain why relying on a single surrogate key (like an auto-incrementing ID) might be inefficient or redundant here.
+-- 2. Book Table (PK definition)
+CREATE TABLE Book (
+    BookID   INT PRIMARY KEY,
+    Title    VARCHAR(200) NOT NULL,
+    Author   VARCHAR(100),
+    ISBN     VARCHAR(20) UNIQUE
+);
 
-### Challenge 5: Scaling and Performance Trade-off
+-- 3. CheckoutTransaction Table (Junction/Transaction table, enforcing referential integrity)
+CREATE TABLE CheckoutTransaction (
+    TransactionID INT PRIMARY KEY, -- Using a surrogate PK for simplicity
+    MemberID      INT NOT NULL,
+    BookID        INT NOT NULL,
+    CheckoutDate  DATE NOT NULL,
+    DueDate       DATE,
+    ReturnDate    DATE,
 
-Explain a scenario where a Database Architect might intentionally choose to **de-normalize** (allow redundancy, violating 3NF) a section of the database (e.g., storing the full customer address on every order record). Justify this choice in terms of performance (read speed) versus integrity (storage efficiency and update cost).
+    FOREIGN KEY (MemberID) REFERENCES Member(MemberID) ON DELETE RESTRICT,
+    FOREIGN KEY (BookID) REFERENCES Book(BookID) ON DELETE RESTRICT
+);
+```
+
+---
+
+### 2. Product Catalog System (3NF Violation and Enforcement)
+
+**The Failure to Achieve 3NF:**
+A failure to achieve **Third Normal Form (3NF)** occurs when a **transitive dependency** exists. This means a non-key attribute (`CategoryName`) is dependent on another non-key attribute (`CategoryID`), instead of depending solely on the Primary Key (`ProductID`).
+
+**Violating Table (Un-normalized): `Product`**
+
+| ProductID (PK) | ProductName | Price | CategoryID | CategoryName |
+| :---: | :---: | :---: | :---: | :---: |
+| 1 | Laptop | 1200.00 | ELE | Electronics |
+| 2 | Mouse | 25.00 | ELE | Electronics |
+| 3 | Novel | 15.00 | BKS | Books |
+
+**Anomalies:**
+If the company changes the full name of Category `ELE` from 'Electronics' to 'Consumer Electronics', every single product row associated with `ELE` must be updated. This is an **Update Anomaly** caused by redundancy.
+
+**Enforcement to 3NF (Decomposition):**
+The transitive dependency is isolated into a separate table, linking back using `CategoryID` as the Foreign Key.
+
+**SQL DDL Required for 3NF:**
+
+```sql
+-- 1. Category Table (Isolates the dependent data)
+CREATE TABLE Category (
+    CategoryID   VARCHAR(10) PRIMARY KEY,
+    CategoryName VARCHAR(100) NOT NULL UNIQUE
+);
+
+-- 2. Product Table (Links via Foreign Key)
+CREATE TABLE Product (
+    ProductID   INT PRIMARY KEY,
+    ProductName VARCHAR(150) NOT NULL,
+    Price       DECIMAL(10, 2),
+    CategoryID  VARCHAR(10) NOT NULL,
+
+    -- Foreign Key links the product back to its category
+    FOREIGN KEY (CategoryID) 
+        REFERENCES Category(CategoryID) 
+        ON DELETE RESTRICT
+);
+```
+
+---
+
+### 3. Restaurant Order System (M:N Resolution)
+
+The relationship between **`Orders`** and **`MenuItems`** is Many-to-Many (M:N):
+*   An `Order` contains many `MenuItems`.
+*   A `MenuItem` can appear on many `Orders`.
+
+**Resolution using a Junction Table:**
+The M:N relationship must be resolved into two 1:M relationships using an intermediate **Junction Table** (or Associative Entity). We will name this table `OrderDetail` (or `OrderLineItem`).
+
+**Schema Structure:**
+
+1.  **`Order` Table (Parent 1):** `OrderID` (PK), `OrderDate`, `CustomerID`.
+2.  **`MenuItem` Table (Parent 2):** `ItemID` (PK), `ItemName`, `Price`.
+3.  **`OrderDetail` Table (Junction Table):** Contains the relationship and specific order attributes.
+
+**Necessary Non-Key Attributes in the Junction Table:**
+The junction table must possess attributes that describe the instance of the specific relationship (i.e., *this* item on *this* order). The essential non-key attribute is **`Quantity`**, as an order rarely includes only one of each item.
+
+Other useful non-key attributes include:
+*   `SpecialInstructions` (e.g., "No onions")
+*   `LinePrice` (Calculated price for this specific item quantity)
+
+**Primary and Foreign Keys for `OrderDetail`:**
+
+*   **Composite Primary Key:** `{OrderID, ItemID}`. This composite key ensures that a specific menu item can only be listed once per order, while still allowing the same item to appear on different orders.
+*   **Foreign Keys:** `OrderID` (FK to `Order`), `ItemID` (FK to `MenuItem`).
+
+---
+
+### 4. Composite Key Design (Soccer Games)
+
+A **Composite Primary Key** is strictly necessary when two or more columns are required to uniquely identify a single record in a table. Relying on a surrogate key (auto-incrementing ID) might be inefficient or redundant here because the natural combination of identifiers already guarantees uniqueness and meaning.
+
+**Table 1: `MatchResult`**
+This table tracks the specific outcome of a game between two teams.
+
+*   **Attributes:** `GameID` (FK), `TeamID` (FK), `GoalsScored`.
+*   **Composite Primary Key:** `{GameID, TeamID}`.
+*   **Justification:** A single `GameID` is not unique, as the game involves at least two records (one for each participating team). A single `TeamID` is not unique, as a team plays many games. However, the combination of a specific `TeamID` within a specific `GameID` is inherently unique and defines the score for that team in that match.
+
+**Table 2: `PlayerPerformance`**
+This table tracks a player's statistics within a specific game.
+
+*   **Attributes:** `GameID` (FK), `PlayerID` (FK), `Goals`, `Assists`, `MinutesPlayed`.
+*   **Composite Primary Key:** `{GameID, PlayerID}`.
+*   **Justification:** A player can only have one set of statistics for any given game. This combination naturally enforces the rule that no player is recorded twice for the same match. Using a surrogate key (`StatID`) would be redundant because the natural keys (`GameID` + `PlayerID`) already provide a perfectly stable, logical, and meaningful identifier.
+
+---
+
+### 5. Scaling and Performance Trade-off (De-normalization)
+
+The Database Architect's ideal target is **3NF** to ensure data integrity and minimize redundancy. However, the architect might intentionally choose to **de-normalize** data (allow redundancy) to prioritize **read performance** over write efficiency and storage integrity.
+
+**Scenario: Storing the Full Customer Address on Every Order Record**
+
+In a fully normalized schema:
+1.  `Order` table holds `OrderID`, `CustomerID` (FK), `OrderDate`.
+2.  `Customer` table holds `CustomerID` (PK), `FirstName`, `LastName`, `AddressLine1`, `City`, `PostalCode`.
+
+To retrieve the full customer address for a specific order, a mandatory **JOIN** between `Order` and `Customer` is required.
+
+**The De-normalized Approach:**
+The architect duplicates key, read-heavy customer data (like `ShippingAddress`, `ShippingCity`, `ShippingPostalCode`) directly into the `Order` table. This violates 3NF because the address attributes are transitively dependent on `CustomerID` (a non-key attribute in the `Order` table).
+
+**Justification for De-normalization:**
+
+| Factor | Normalized (3NF) | De-normalized | Justification for Choice |
+| :--- | :--- | :--- | :--- |
+| **Integrity / Update Cost** | **High Integrity**. If the customer changes their address, only *one* row in the `Customer` table needs updating. | **Low Integrity**. If the customer changes their address, historical orders will be incorrect unless those old addresses are preserved, and new orders must pull the updated address. | Higher integrity is sacrificed. Updates are more complex. |
+| **Storage Efficiency** | **High Efficiency**. Address data is stored once. | **Low Efficiency**. Address data is redundantly stored in potentially millions of order records. | Higher storage cost is accepted. |
+| **Read Speed (Performance)** | **Slower**. Every common query (retrieving order details, packing slips, invoices) requires a resource-intensive **JOIN** operation. | **Faster**. No join is needed to retrieve the most frequently accessed data (address). This significantly reduces query execution time and disk I/O, particularly under heavy read loads. | **Performance is the primary driver.** For systems dominated by reads (e.g., historical reporting, high-traffic APIs), the speed benefit of avoiding a join often outweighs the integrity/storage cost. |
+
+The decision to de-normalize is typically made when the performance improvement for critical read operations is measurable and significant, and the risk of update anomalies (since shipping addresses rarely change for *past* orders) is deemed acceptable.
 
 ---
 
